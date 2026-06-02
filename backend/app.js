@@ -8,7 +8,7 @@ app.use(express.json())
 //middleware
 app.use('/api/v1', expense);
 
-const port = process.env.PORT
+const port = process.env.PORT || 3000
 
 try {
     connectDB(process.env.MONGO_URI)
