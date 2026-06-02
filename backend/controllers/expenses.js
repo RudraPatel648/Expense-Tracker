@@ -6,13 +6,13 @@ const createExpense = (async (req, res) => {
 })
 
 const getExpenseAll = async (req, res) => {
-    const expense = await Expense.find({});
+    const expense = await Expense.find({}).sort(req.query.sort)
     res.status(200).json(expense)
 }
 
 const getExpense = async (req, res) => {
     const { id } = req.params;
-    const expense = await Expense.findById(id);
+    const expense = await Expense.findById(id).sort(req.query.sort)
     if (!expense) {
         res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
@@ -38,9 +38,15 @@ const deleteExpense = async (req, res) => {
     res.status(200).json(expense);
 }
 
+const getExpenseFiltered = async (req,res) =>{
+    const expense = await Expense.find(req.body).sort(req.query.sort)
+    res.status(200).json(expense);
+}
+
 module.exports = {
     createExpense,
     getExpense,
+    getExpenseFiltered,
     getExpenseAll,
     updateExpense,
     deleteExpense
