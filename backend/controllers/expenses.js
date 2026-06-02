@@ -1,52 +1,41 @@
-const Expense = require('../models/expense-model');
+const Expense = require('../models/expense-model')
 
-const createExpense = async (req, res) => {
-    try {
-        const expense = await Expense.create(req.body)
-        res.status(200).json(expense);
+const createExpense = (async (req, res) => {
+    const expense = await Expense.create(req.body)
+    res.status(200).json(expense);
+})
 
-    }
-    catch (err) {
-        res.status(404).json({ msg: err })
-    }
+const getExpenseAll = async (req, res) => {
+    const expense = await Expense.find({});
+    res.status(200).json(expense)
 }
 
 const getExpense = async (req, res) => {
     const { id } = req.params;
-    try {
-        const expense = await Expense.findById(id);
-        res.status(200).json(expense);
+    const expense = await Expense.findById(id);
+    if (!expense) {
+        res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    catch (err) {
-        res.status(404).json({ msg: err });
-    }
-}
-
-const getExpenseAll = async (req, res) => {
-    const expenses = await Expense.find({});
-    res.status(200).json(expenses)
+    res.status(200).json(expense);
+    res.status(404).json({ msg: err });
 }
 
 const updateExpense = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const expense = await Expense.findByIdAndUpdate(id, req.body, { returnDocument: 'after' });
-        res.status(200).json(expense);
+    const { id } = req.params;
+    const expense = await Expense.findByIdAndUpdate(id, req.body, { returnDocument: 'after' });
+    if (!expense) {
+        res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    catch (err) {
-        res.status(404).json({ msg: err });
-    }
+    res.status(200).json(expense);
 }
 
 const deleteExpense = async (req, res) => {
     const { id } = req.params;
-    try {
-        const expense = await Expense.findByIdAndDelete(id);
-        res.status(200).json(expense);
+    const expense = await Expense.findByIdAndDelete(id);
+    if (!expense) {
+        res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    catch (err) {
-        res.status(404).json({ msg: err });
-    }
+    res.status(200).json(expense);
 }
 
 module.exports = {
