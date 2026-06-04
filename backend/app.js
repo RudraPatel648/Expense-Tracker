@@ -1,13 +1,12 @@
 const express = require('express')
 const cors = require('cors')
-const app = express();
 const connectDB = require('./DB/connect')
+const app = express();
 const expense = require('./routes/expense');
 require('dotenv').config()
+
 app.use(cors())
 app.use(express.json())
-
-//middleware
 app.use('/api/v1', expense);
 
 const port = process.env.PORT || 3000
