@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './App.css';
 
-const API_URL = 'http://localhost:3000/api/v1/expenses';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1/expenses';
 
 // Helper to map backend categories to their corresponding CSS classes
 const CATEGORY_COLORS = {
@@ -40,10 +40,10 @@ function App() {
       setLoading(true);
       const res = await fetch(API_URL);
       if (!res.ok) {
-        throw new Error('Could not connect to backend server. Make sure it is running on port 3000!');
+        throw new Error(`Server returned an error: ${res.status}. Please check backend logs.`);
       }
       const data = await res.json();
-      setExpenses(data.expenses);
+      setExpenses(data.expenses || data);
       setError(null);
     } catch (err) {
       console.error(err);
