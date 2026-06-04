@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 
 const API_URL = 'http://localhost:3000/api/v1/expenses';
@@ -43,7 +43,7 @@ function App() {
         throw new Error('Could not connect to backend server. Make sure it is running on port 3000!');
       }
       const data = await res.json();
-      setExpenses(data);
+      setExpenses(data.expenses);
       setError(null);
     } catch (err) {
       console.error(err);
@@ -54,8 +54,8 @@ function App() {
   };
 
   useEffect(() => {
-    fetchExpenses();
-  }, []);
+    fetchExpenses();    //Eslint Error
+  },[]);
 
   // Handle adding a new expense
   const handleAddExpense = async (e) => {
@@ -279,7 +279,7 @@ function App() {
       </section>
 
       {/* BUDGET */}
-      <section id="budget" class="section bg-lime">
+      <section id="budget" className="section bg-lime">
         <div className="container">
           <div className="section__head">
             <div>
@@ -344,7 +344,7 @@ function App() {
             <div className="card">
               <p className="micro mb">STACK VIEW</p>
               <div className="stackbar">
-                {rankedCategories.map((item, idx) => (
+                {rankedCategories.map((item) => ( //indx never used
                   item.amount > 0 && (
                     <span
                       key={item.category}
