@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const API_URL = 'http://localhost:3000/api/v1/expenses';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1/expenses';
 
 // Helper to map backend categories to their corresponding CSS classes
 const CATEGORY_COLORS = {
