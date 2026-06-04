@@ -14,10 +14,10 @@ const expenseSchema = new mongoose.Schema(
         },
         category:{
             type:String,
-            enum : [{
-                values : ["Food" , "Transport" , "Shopping" , "Bills" , "Entertainment" , "Other"],
-                message : 'Category {VALUE} is Invalid'
-            }],
+            enum: {
+                values: ["Food" , "Transport" , "Shopping" , "Bills" , "Entertainment" , "Other"],
+                message: 'Category {VALUE} is Invalid'
+            },
             required:[true,'Must define category']
         },
         createdAt:{
