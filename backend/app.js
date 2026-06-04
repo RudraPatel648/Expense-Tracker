@@ -5,6 +5,9 @@ const app = express();
 const expense = require('./routes/expense');
 require('dotenv').config()
 
+// Initialize offline mode as false by default
+app.locals.isOfflineMode = false;
+
 app.use(cors())
 app.use(express.json())
 app.use('/api/v1', expense);
@@ -25,6 +28,7 @@ const start = async () => {
     catch (err) {
         console.error('Database connection failed:', err.message)
         console.log('Starting server in offline-mode fallback...')
+        app.locals.isOfflineMode = true; // Enable in-memory fallback
         app.listen(port, () => {
             console.log(`Server is Listening on port ${port} (OFFLINE-MODE)...`)
         })
