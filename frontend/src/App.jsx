@@ -43,7 +43,7 @@ function App() {
         throw new Error('Could not connect to backend server. Make sure it is running on port 3000!');
       }
       const data = await res.json();
-      setExpenses(data);
+      setExpenses(data.expenses || data);
       setError(null);
     } catch (err) {
       console.error(err);
