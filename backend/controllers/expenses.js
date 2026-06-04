@@ -32,11 +32,11 @@ const getExpenseAll = async (req, res) => {
 
 const getExpense = async (req, res) => {
     const { id } = req.params;
-    const expense = await Expense.findById(id)
+    const expense = await Expense.findById(id);
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    res.status(200).json(expense);
+    return res.status(200).json(expense);
 }
 
 const updateExpense = async (req, res) => {
@@ -56,7 +56,7 @@ const updateExpense = async (req, res) => {
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    res.status(200).json(expense);
+    return res.status(200).json(expense);
 }
 
 const deleteExpense = async (req, res) => {
@@ -65,7 +65,7 @@ const deleteExpense = async (req, res) => {
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
-    res.status(200).json(expense);
+    return res.status(200).json(expense);
 }
 
 module.exports = {
