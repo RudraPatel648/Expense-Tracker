@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
+import ProtectedRoute from './ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import ProfilePage from './pages/ProfilePage';
+import api from './api';
 import './App.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1/expenses';
+import './auth.css';
 
 // Helper to map backend categories to their corresponding CSS classes
 const CATEGORY_COLORS = {
@@ -13,7 +19,10 @@ const CATEGORY_COLORS = {
   Other: 'bg-pink'
 };
 
-function App() {
+function Dashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,7 +47,8 @@ function App() {
   const fetchExpenses = async () => {
     try {
       setLoading(true);
-      const res = await fetch(API_URL);
+      const res = await api.get('/api/v1/expenses');
+      if (!res) return; // redirected to login
       if (!res.ok) {
         throw new Error(`Server returned an error: ${res.status}. Please check backend logs.`);
       }
@@ -71,18 +81,13 @@ function App() {
     }
 
     try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          amount: parsedAmount,
-          category
-        })
+      const res = await api.post('/api/v1/expenses', {
+        title: title.trim(),
+        amount: parsedAmount,
+        category
       });
 
+      if (!res) return;
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.msg || 'Failed to create expense');
@@ -104,10 +109,8 @@ function App() {
   // Handle deleting an expense
   const handleDeleteExpense = async (id) => {
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE'
-      });
-
+      const res = await api.delete(`/api/v1/expenses/${id}`);
+      if (!res) return;
       if (!res.ok) {
         throw new Error('Failed to delete expense');
       }
@@ -130,6 +133,12 @@ function App() {
         alert('Please enter a valid positive number');
       }
     }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
   };
 
   // Calculate stats based on total expenses
@@ -223,7 +232,12 @@ function App() {
             <a href="#add">ADD</a>
             <a href="#expenses">LEDGER</a>
           </div>
-          <a href="#add" className="btn btn--dark">START →</a>
+          <div className="nav-user">
+            <Link to="/profile" className="nav-user__name" id="nav-profile-link">
+              HELLO, {user?.name?.toUpperCase() || 'USER'} ▼
+            </Link>
+            <a href="#add" className="btn btn--dark">+ ADD EXPENSE</a>
+          </div>
         </div>
       </nav>
 
@@ -344,7 +358,7 @@ function App() {
             <div className="card">
               <p className="micro mb">STACK VIEW</p>
               <div className="stackbar">
-                {rankedCategories.map((item) => ( //indx never used
+                {rankedCategories.map((item) => (
                   item.amount > 0 && (
                     <span
                       key={item.category}
@@ -535,6 +549,25 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+    </Routes>
   );
 }
 

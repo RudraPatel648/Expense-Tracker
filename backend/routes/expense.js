@@ -1,7 +1,10 @@
 const router = require('express').Router();
 const { createExpense, getExpense , getExpenseAll, updateExpense, deleteExpense , } = require('../controllers/expenses')
 const asyncWrapper = require('../middleware/async')
+const authenticate = require('../middleware/auth')
 
+// All expense routes require authentication
+router.use(authenticate);
 
 router.post('/expenses', asyncWrapper(createExpense))
 
