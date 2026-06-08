@@ -4,6 +4,10 @@ const helmet = require('helmet')
 const cookieParser = require('cookie-parser')
 const connectDB = require('./DB/connect')
 const app = express();
+
+// Trust proxy for rate limiter behind Render's load balancer
+app.set('trust proxy', 1);
+
 const expense = require('./routes/expense');
 const authRoutes = require('./routes/auth');
 require('dotenv').config()
