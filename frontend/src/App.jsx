@@ -19,6 +19,103 @@ const CATEGORY_COLORS = {
   Other: 'bg-pink'
 };
 
+// Reusable custom dropdown styled in brutalist aesthetic
+function BrutalistSelect({ value, onChange, options, colorMap }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="brutalist-select-container" style={{ position: 'relative', marginTop: '4px' }}>
+      <button
+        type="button"
+        className="brutalist-select-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          border: '4px solid #0d0d0d',
+          background: '#f7f3e3',
+          padding: '8px 12px',
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '14px',
+          fontWeight: 700,
+          outline: 'none',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          boxSizing: 'border-box'
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {colorMap && colorMap[value] && (
+            <span className={`tag ${colorMap[value]}`} style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid #0d0d0d', padding: 0 }}></span>
+          )}
+          {value.toUpperCase()}
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="square">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 998 }} onClick={() => setIsOpen(false)} />
+          <ul
+            className="brutalist-select-options"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 0,
+              width: '100%',
+              background: '#f7f3e3',
+              border: '4px solid #0d0d0d',
+              zIndex: 999,
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              boxShadow: '4px 4px 0 0 #0d0d0d',
+              boxSizing: 'border-box'
+            }}
+          >
+            {options.map((opt) => (
+              <li key={opt} style={{ borderBottom: opt !== options[options.length - 1] ? '2px solid #0d0d0d' : 'none' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(opt);
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    textAlign: 'left',
+                    background: value === opt ? '#ffe066' : 'transparent',
+                    border: 'none',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxSizing: 'border-box'
+                  }}
+                  onMouseEnter={(e) => { if (value !== opt) e.currentTarget.style.background = '#c5f24a'; }}
+                  onMouseLeave={(e) => { if (value !== opt) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {colorMap && colorMap[opt] && (
+                    <span className={`tag ${colorMap[opt]}`} style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid #0d0d0d', padding: 0 }}></span>
+                  )}
+                  {opt.toUpperCase()}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +139,49 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
   const [sortBy, setSortBy] = useState('Date ↓');
+
+  // Custom Modal dialog states (replacing alert, prompt, confirm)
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    type: 'alert', // 'alert' | 'confirm' | 'prompt'
+    title: '',
+    message: '',
+    inputValue: '',
+    onConfirm: () => {}
+  });
+
+  const showAlert = (message) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'alert',
+      title: 'ATTENTION',
+      message,
+      inputValue: '',
+      onConfirm: () => {}
+    });
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'confirm',
+      title: 'ARE YOU SURE?',
+      message,
+      inputValue: '',
+      onConfirm
+    });
+  };
+
+  const showPrompt = (title, defaultValue, onConfirm) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'prompt',
+      title,
+      message: '',
+      inputValue: defaultValue,
+      onConfirm
+    });
+  };
 
   // Fetch expenses from API
   const fetchExpenses = async () => {
@@ -71,12 +211,12 @@ function Dashboard() {
   const handleAddExpense = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Please enter a title');
+      showAlert('Please enter a title');
       return;
     }
     const parsedAmount = Number(amount);
     if (isNaN(parsedAmount) || parsedAmount < 10) {
-      alert('Minimum amount that can be tracked is 10');
+      showAlert('Minimum amount that can be tracked is 10');
       return;
     }
 
@@ -102,7 +242,7 @@ function Dashboard() {
       setAmount('');
       setCategory('Food');
     } catch (err) {
-      alert(err.message);
+      showAlert(err.message);
     }
   };
 
@@ -117,22 +257,23 @@ function Dashboard() {
 
       setExpenses((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
-      alert(err.message);
+      showAlert(err.message);
     }
   };
 
   // Change Budget Value
   const handleEditBudget = () => {
-    const newBudget = prompt('Enter your monthly budget amount:', budget);
-    if (newBudget !== null) {
-      const parsed = Number(newBudget);
-      if (!isNaN(parsed) && parsed > 0) {
-        setBudget(parsed);
-        localStorage.setItem('stacks_budget', parsed.toString());
-      } else {
-        alert('Please enter a valid positive number');
+    showPrompt('ENTER NEW MONTHLY BUDGET', budget.toString(), (newBudget) => {
+      if (newBudget !== null) {
+        const parsed = Number(newBudget);
+        if (!isNaN(parsed) && parsed > 0) {
+          setBudget(parsed);
+          localStorage.setItem('stacks_budget', parsed.toString());
+        } else {
+          showAlert('Please enter a valid positive number');
+        }
       }
-    }
+    });
   };
 
   // Handle logout
@@ -233,8 +374,11 @@ function Dashboard() {
             <a href="#expenses">LEDGER</a>
           </div>
           <div className="nav-user">
-            <Link to="/profile" className="nav-user__name" id="nav-profile-link">
-              HELLO, {user?.name?.toUpperCase() || 'USER'} ▼
+            <Link to="/profile" className="nav-user__name" id="nav-profile-link" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              HELLO, {user?.name?.toUpperCase() || 'USER'}
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="square">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </Link>
             <a href="#add" className="btn btn--dark">+ ADD EXPENSE</a>
           </div>
@@ -300,8 +444,12 @@ function Dashboard() {
               <p className="kicker">// SECTION 01</p>
               <h2 className="section__title">MONTHLY BUDGET</h2>
             </div>
-            <button className="chip" onClick={handleEditBudget} style={{ cursor: 'pointer' }}>
-              SET BUDGET: ${budget} ⚙️
+            <button className="chip" onClick={handleEditBudget} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              SET BUDGET: ${budget}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
             </button>
           </div>
 
@@ -321,7 +469,20 @@ function Dashboard() {
               <div className="progress__fill" style={{ width: `${progressPercent}%` }}></div>
               <div className="progress__labels">
                 <span>{Math.round(progressPercent)}% USED</span>
-                <span>{left >= 0 ? `$${left} LEFT` : `$${Math.abs(left)} OVER BUDGET! 🛑`}</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  {left >= 0 ? (
+                    `$${left} LEFT`
+                  ) : (
+                    <>
+                      {`$${Math.abs(left)} OVER BUDGET!`}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="square" strokeLinejoin="miter" style={{ color: '#ff8aa8' }}>
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </>
+                  )}
+                </span>
               </div>
             </div>
 
@@ -427,6 +588,7 @@ function Dashboard() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={20}
+                autoComplete="off"
                 required
               />
             </div>
@@ -439,16 +601,18 @@ function Dashboard() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                autoComplete="off"
                 required
               />
             </div>
             <div>
               <label className="micro">CATEGORY</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                {Object.keys(CATEGORY_COLORS).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <BrutalistSelect
+                value={category}
+                onChange={setCategory}
+                options={Object.keys(CATEGORY_COLORS)}
+                colorMap={CATEGORY_COLORS}
+              />
             </div>
             <button type="submit" className="btn btn--dark">+ ADD</button>
           </form>
@@ -473,25 +637,25 @@ function Dashboard() {
                 placeholder="hunt an expense..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
               />
             </div>
             <div>
               <label className="micro">FILTER BY</label>
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                <option value="All">All</option>
-                {Object.keys(CATEGORY_COLORS).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+              <BrutalistSelect
+                value={filterCategory}
+                onChange={setFilterCategory}
+                options={['All', ...Object.keys(CATEGORY_COLORS)]}
+                colorMap={CATEGORY_COLORS}
+              />
             </div>
             <div>
               <label className="micro">SORT BY</label>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option>Date ↓</option>
-                <option>Date ↑</option>
-                <option>Amount ↓</option>
-                <option>Amount ↑</option>
-              </select>
+              <BrutalistSelect
+                value={sortBy}
+                onChange={setSortBy}
+                options={['Date ↓', 'Date ↑', 'Amount ↓', 'Amount ↑']}
+              />
             </div>
           </div>
 
@@ -527,9 +691,14 @@ function Dashboard() {
                   <button
                     className="del"
                     aria-label="Delete"
-                    onClick={() => handleDeleteExpense(item._id)}
+                    onClick={() => showConfirm('DO YOU REALLY WANT TO BLOW THIS EXPENSE AWAY?', () => handleDeleteExpense(item._id))}
                   >
-                    🗑
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
                   </button>
                 </div>
               ))
@@ -548,6 +717,109 @@ function Dashboard() {
           <span>BUILT WITH THICK BORDERS AND BAD ATTITUDE.</span>
         </div>
       </footer>
+
+      {/* Custom Modal Backdrop and Dialog Overlay */}
+      {modalConfig.isOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(13, 13, 13, 0.75)',
+            display: 'grid',
+            placeItems: 'center',
+            zIndex: 10000,
+            padding: '24px'
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              border: '4px solid #0d0d0d',
+              background: '#f7f3e3',
+              padding: '28px',
+              boxShadow: '8px 8px 0 0 #0d0d0d',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              boxSizing: 'border-box'
+            }}
+          >
+            <div
+              style={{
+                borderBottom: '4px solid #0d0d0d',
+                paddingBottom: '12px',
+                fontFamily: '"JetBrains Mono", monospace',
+                fontWeight: 700,
+                fontSize: '18px',
+                color: '#0d0d0d'
+              }}
+            >
+              // {modalConfig.title.toUpperCase()}
+            </div>
+
+            {modalConfig.message && (
+              <p
+                style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '14px',
+                  lineHeight: 1.5,
+                  color: '#0d0d0d',
+                  margin: 0
+                }}
+              >
+                {modalConfig.message}
+              </p>
+            )}
+
+            {modalConfig.type === 'prompt' && (
+              <input
+                type="text"
+                value={modalConfig.inputValue}
+                onChange={(e) => setModalConfig(prev => ({ ...prev, inputValue: e.target.value }))}
+                style={{
+                  width: '100%',
+                  border: '4px solid #0d0d0d',
+                  background: '#f7f3e3',
+                  padding: '10px 14px',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.background = '#ffe066'}
+                onBlur={(e) => e.target.style.background = '#f7f3e3'}
+                autoComplete="off"
+                autoFocus
+              />
+            )}
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+              {modalConfig.type !== 'alert' && (
+                <button
+                  type="button"
+                  className="btn btn--paper"
+                  onClick={() => setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} })}
+                  style={{ fontSize: '12px', padding: '8px 16px' }}
+                >
+                  CANCEL
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn--dark"
+                onClick={() => {
+                  modalConfig.onConfirm(modalConfig.inputValue);
+                  setModalConfig({ isOpen: false, type: 'alert', title: '', message: '', inputValue: '', onConfirm: () => {} });
+                }}
+                style={{ fontSize: '12px', padding: '8px 16px' }}
+              >
+                {modalConfig.type === 'confirm' ? 'CONFIRM' : 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
