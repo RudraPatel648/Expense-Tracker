@@ -7,6 +7,7 @@ const createExpense = async (req, res) => {
     if (req.app.locals.isOfflineMode) {
         const newExpense = {
             _id: new Date().getTime().toString(),
+            userId: req.userId,
             title: req.body.title,
             amount: Number(req.body.amount),
             category: req.body.category,
@@ -15,14 +16,14 @@ const createExpense = async (req, res) => {
         localExpenses.push(newExpense);
         return res.status(201).json(newExpense);
     }
-    const expense = await Expense.create(req.body)
+    const expense = await Expense.create({ ...req.body, userId: req.userId })
     return res.status(201).json(expense);
 }
 
 const getExpenseAll = async (req, res) => {
     if (req.app.locals.isOfflineMode) {
         const { title, category, sort } = req.query;
-        let filtered = [...localExpenses];
+        let filtered = localExpenses.filter(e => e.userId === req.userId);
 
         if (title) {
             filtered = filtered.filter(e => e.title.toLowerCase().includes(title.toLowerCase()));
@@ -57,7 +58,7 @@ const getExpenseAll = async (req, res) => {
     }
 
     const {title , category , sort} = req.query;
-    const queryObject = {};
+    const queryObject = { userId: req.userId };
 
     if(title){
         queryObject.title = {$regex : title , $options : 'i'};
@@ -82,14 +83,14 @@ const getExpenseAll = async (req, res) => {
 const getExpense = async (req, res) => {
     const { id } = req.params;
     if (req.app.locals.isOfflineMode) {
-        const expense = localExpenses.find(e => e._id === id);
+        const expense = localExpenses.find(e => e._id === id && e.userId === req.userId);
         if (!expense) {
             return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
         }
         return res.status(200).json(expense);
     }
 
-    const expense = await Expense.findById(id);
+    const expense = await Expense.findOne({ _id: id, userId: req.userId });
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
@@ -99,7 +100,7 @@ const getExpense = async (req, res) => {
 const updateExpense = async (req, res) => {
     const { id } = req.params;
     if (req.app.locals.isOfflineMode) {
-        const index = localExpenses.findIndex(e => e._id === id);
+        const index = localExpenses.findIndex(e => e._id === id && e.userId === req.userId);
         if (index === -1) {
             return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
         }
@@ -121,7 +122,11 @@ const updateExpense = async (req, res) => {
     if(category !== undefined){
         queryObject.category = category;
     }
-    const expense = await Expense.findByIdAndUpdate(id, queryObject, { returnDocument: 'after' , runValidators : true });
+    const expense = await Expense.findOneAndUpdate(
+        { _id: id, userId: req.userId },
+        queryObject,
+        { returnDocument: 'after', runValidators: true }
+    );
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }
@@ -131,7 +136,7 @@ const updateExpense = async (req, res) => {
 const deleteExpense = async (req, res) => {
     const { id } = req.params;
     if (req.app.locals.isOfflineMode) {
-        const index = localExpenses.findIndex(e => e._id === id);
+        const index = localExpenses.findIndex(e => e._id === id && e.userId === req.userId);
         if (index === -1) {
             return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
         }
@@ -139,7 +144,7 @@ const deleteExpense = async (req, res) => {
         return res.status(200).json(deleted[0]);
     }
 
-    const expense = await Expense.findByIdAndDelete(id);
+    const expense = await Expense.findOneAndDelete({ _id: id, userId: req.userId });
     if (!expense) {
         return res.status(404).json({ msg: `No Expenses with Id : ${id}` })
     }

@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const expenseSchema = new mongoose.Schema(
     {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: [true, 'Expense must belong to a user'],
+            index: true
+        },
         title: {
             type: String,
             maxLength : [20 , 'Maximum length of title is 20'],
